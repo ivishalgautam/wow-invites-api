@@ -48,6 +48,7 @@ const constants = {
     FIELDS_TABLE: "template_fields",
     QUERY_TABLE: "queries",
     CATEGORY_TABLE: "categories",
+    BANNER_TABLE: "banners",
   },
   bcrypt: {
     SALT_ROUNDS: 10,

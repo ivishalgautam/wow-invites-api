@@ -7,12 +7,11 @@ const init = async (sequelizeObj) => {
   sequelize = sequelizeObj;
   const modelsName = Object.keys(models);
 
-  for (const modelName of modelsName) {
-    try {
-      await models[modelName].init(sequelize);
-    } catch (error) {
-      console.error(`Error initializing model ${modelName}:`, error);
-    }
+  for await (const modelName of modelsName) {
+    new Promise((resolve) => {
+      models[modelName].init(sequelize);
+      resolve({ modelName });
+    });
   }
 };
 

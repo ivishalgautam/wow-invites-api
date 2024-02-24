@@ -53,9 +53,6 @@ const updateById = async (req, res) => {
 
 const getBySlug = async (req, res) => {
   try {
-    let slug = slugify(req.body.title, { lower: true });
-    req.body.slug = slug;
-
     const record = await table.CategoryModel.getBySlug(req, req.params.slug);
 
     if (!record) {
@@ -63,8 +60,8 @@ const getBySlug = async (req, res) => {
         .code(constants.http.status.NOT_FOUND)
         .send({ message: "Category not found!" });
     }
-
-    res.send(await table.CategoryModel.getById(req, req.params.id));
+    console.log({ record });
+    res.send(record);
   } catch (error) {
     console.error(error);
     res.code(constants.http.status.INTERNAL_SERVER_ERROR).send(error);
@@ -90,8 +87,9 @@ const getById = async (req, res) => {
 
 const get = async (req, res) => {
   try {
-    const products = await table.CategoryModel.get(req);
-    res.send(products);
+    const { categories, total_page, page } = await table.CategoryModel.get(req);
+
+    res.send({ page, total_page, data: categories });
   } catch (error) {
     console.error(error);
     res.code(constants.http.status.INTERNAL_SERVER_ERROR).send(error);

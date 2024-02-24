@@ -13,8 +13,9 @@ import routes from "./app/routes/v1/index.js";
 import uploadFileRoutes from "./app/api/upload_files/routes.js";
 import paymentRoutes from "./app/api/payment/routes.js";
 
-// import productController from "./app/api/products/controller.js";
-// import categoriesController from "./app/api/categories/controller.js";
+import templateController from "./app/api/template/controller.js";
+import categoriesController from "./app/api/category/controller.js";
+import bannerController from "./app/api/banner/controller.js";
 /*
     Register External packages, routes, database connection
 */
@@ -34,7 +35,23 @@ export default (app) => {
   app.register(authRoutes, { prefix: "v1/auth" });
   app.register(paymentRoutes, { prefix: "v1/payment" });
 
-  // app.get("/v1/products", {}, productController.get);
-  // app.get("/v1/categories", {}, categoriesController.get);
+  // tmplates
+  app.get("/v1/templates", {}, templateController.get);
+  app.get("/v1/templates/getBySlug/:slug", {}, templateController.getBySlug);
+  app.get(
+    "/v1/templates/getByCategory/:slug",
+    {},
+    templateController.getByCategory
+  );
+  app.get("/v1/templates/search", {}, templateController.searchTemplates);
+
+  // category
+  app.get("/v1/categories", {}, categoriesController.get);
+  app.get("/v1/categories/:slug", {}, categoriesController.getBySlug);
+
+  // banner
+  app.get("/v1/banners", {}, bannerController.get);
+
+  // upload
   app.register(uploadFileRoutes, { prefix: "v1/upload" });
 };

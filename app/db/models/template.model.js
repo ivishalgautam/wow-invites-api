@@ -1,5 +1,5 @@
 "use strict";
-import { DataTypes, QueryTypes, Deferrable } from "sequelize";
+import { DataTypes, QueryTypes, Deferrable, Op } from "sequelize";
 import constants from "../../lib/constants/index.js";
 
 let TemplateModel = null;
@@ -17,8 +17,10 @@ const init = async (sequelize) => {
       name: { type: DataTypes.STRING, allowNull: false },
       slug: { type: DataTypes.STRING, allowNull: false, unique: true },
       url: { type: DataTypes.TEXT, allowNull: false },
+      thumbnail: { type: DataTypes.TEXT, allowNull: true },
       price: { type: DataTypes.INTEGER, allowNull: false },
       sale_price: { type: DataTypes.INTEGER, allowNull: true },
+      tags: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
       category_id: {
         type: DataTypes.UUID,
         allowNull: false,
@@ -44,8 +46,10 @@ const create = async (req) => {
     name: req.body?.name,
     slug: req.body?.slug,
     url: req.body?.url,
+    thumbnail: req.body?.thumbnail,
     price: req.body?.price,
     sale_price: req.body?.sale_price,
+    tags: req.body?.tags,
     category_id: req.body?.category_id,
   });
 };
@@ -56,8 +60,10 @@ const updateById = async (req, template_id) => {
       name: req.body?.name,
       slug: req.body.slug,
       url: req.body?.url,
+      thumbnail: req.body?.thumbnail,
       price: req.body?.price,
       sale_price: req.body?.sale_price,
+      tags: req.body?.tags,
       category_id: req.body?.category_id,
     },
     {
@@ -71,7 +77,48 @@ const updateById = async (req, template_id) => {
 };
 
 const get = async (req) => {
-  return await TemplateModel.findAll({});
+  const featured = req?.query?.featured;
+  let whereQuery = "";
+  const page_number = req?.query.page ?? 1;
+  const limit = !req?.query.limit
+    ? 10
+    : req?.query?.limit > 10
+    ? 10
+    : req?.query?.limit;
+
+  const offset = (page_number - 1) * limit;
+  let threshold = `LIMIT '${limit}' OFFSET '${offset}';`;
+
+  if (featured == "true") {
+    whereQuery = `WHERE cat.is_featured = true;`;
+    threshold = "";
+  }
+
+  let query = `
+  SELECT
+      tmp.id,
+      tmp.name,
+      tmp.slug,
+      tmp.url,
+      tmp.thumbnail,
+      tmp.price,
+      tmp.sale_price,
+      tmp.tags,
+      tmp.category_id,
+      tmp.created_at,
+      tmp.updated_at,
+      cat.name as category_name,
+      cat.id as category_id
+    FROM templates tmp
+    LEFT JOIN categories cat ON cat.id = tmp.category_id
+    ${whereQuery}
+    ${threshold}
+`;
+
+  return await TemplateModel.sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    raw: true,
+  });
 };
 
 const getById = async (template_id) => {
@@ -79,8 +126,10 @@ const getById = async (template_id) => {
           SELECT
               tmp.id,
               tmp.name,
+              tmp.thumbnail,
               tmp.price,
               tmp.sale_price,
+              tmp.tags,
               tmp.url,
               tmp.category_id,
               json_agg(DISTINCT tf.*) as fields,
@@ -92,14 +141,88 @@ const getById = async (template_id) => {
             GROUP BY
               tmp.id,
               tmp.name,
+              tmp.thumbnail,
               tmp.price,
               tmp.sale_price,
+              tmp.tags,
               tmp.url,
               tmp.category_id
   `;
   return await TemplateModel.sequelize.query(query, {
     type: QueryTypes.SELECT,
     plain: true,
+  });
+};
+
+const getBySlug = async (slug) => {
+  const query = `
+          SELECT
+              tmp.id,
+              tmp.name,
+              tmp.thumbnail,
+              tmp.price,
+              tmp.sale_price,
+              tmp.tags,
+              tmp.url,
+              tmp.category_id,
+              tmp.slug,
+              json_agg(DISTINCT tf.*) as fields,
+              json_agg(DISTINCT imgs.*) as images
+            FROM templates tmp
+            LEFT JOIN template_fields tf ON tf.template_id = tmp.id
+            LEFT JOIN template_images imgs ON imgs.template_id = tmp.id
+            WHERE tmp.slug = '${slug}'
+            GROUP BY
+              tmp.id,
+              tmp.name,
+              tmp.thumbnail,
+              tmp.price,
+              tmp.sale_price,
+              tmp.tags,
+              tmp.url,
+              tmp.category_id,
+              tmp.slug
+  `;
+  return await TemplateModel.sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    plain: true,
+  });
+};
+
+const getByCategory = async (slug) => {
+  const query = `
+          SELECT
+              tmp.id,
+              tmp.name,
+              tmp.thumbnail,
+              tmp.price,
+              tmp.sale_price,
+              tmp.tags,
+              tmp.url,
+              tmp.category_id,
+              tmp.slug,
+              json_agg(DISTINCT tf.*) as fields,
+              json_agg(DISTINCT imgs.*) as images
+            FROM templates tmp
+            LEFT JOIN template_fields tf ON tf.template_id = tmp.id
+            LEFT JOIN template_images imgs ON imgs.template_id = tmp.id
+            LEFT JOIN categories cat ON tmp.category_id = cat.id
+            WHERE cat.slug = '${slug}'
+            GROUP BY
+              tmp.id,
+              tmp.name,
+              tmp.thumbnail,
+              tmp.price,
+              tmp.sale_price,
+              tmp.tags,
+              tmp.url,
+              tmp.category_id,
+              tmp.slug
+  `;
+
+  return await TemplateModel.sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    raw: true,
   });
 };
 
@@ -123,13 +246,40 @@ const findBySlug = async (slug) => {
   });
 };
 
+const searchTemplates = async (req) => {
+  const q = req.query.q.split("-").join(" ");
+  if (!q) return [];
+
+  const query = `
+    SELECT t.*
+    FROM Templates AS t
+    WHERE 
+      t.name ILIKE '%${q}%' 
+      OR '%${q}%' = ANY(t.tags) 
+      OR EXISTS (
+        SELECT 1 
+        FROM unnest(t.tags) AS tag 
+        WHERE tag ILIKE '%${q}%'
+      )
+  `;
+
+  // Fetch templates and categories based on the search term
+  return await TemplateModel.sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    raw: true,
+  });
+};
+
 export default {
   init: init,
   create: create,
   updateById: updateById,
   get: get,
   getById: getById,
+  getBySlug: getBySlug,
+  getByCategory: getByCategory,
   findById: findById,
   deleteById: deleteById,
   findBySlug: findBySlug,
+  searchTemplates: searchTemplates,
 };

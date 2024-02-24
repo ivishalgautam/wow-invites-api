@@ -7,7 +7,7 @@ import table from "../../db/models.js";
 const create = async (req, res) => {
   req.body.slug = slugify(req.body.name, { lower: true });
   try {
-    const record = await table.TempalateModel.findBySlug(req.body.slug);
+    const record = await table.TemplateModel.findBySlug(req.body.slug);
 
     if (record) {
       return res
@@ -15,7 +15,7 @@ const create = async (req, res) => {
         .send({ message: "template exists with this name!" });
     }
 
-    const template = await table.TempalateModel.create(req);
+    const template = await table.TemplateModel.create(req);
 
     if (template && req.body.fields) {
       req.body.fields.forEach(async (field) => {
@@ -57,8 +57,8 @@ const create = async (req, res) => {
 const updateById = async (req, res) => {
   req.body.slug = slugify(req.body.name, { lower: true });
   try {
-    const slugExist = await table.TempalateModel.findBySlug(req.body.slug);
-    const record = await table.TempalateModel.findById(req.params.id);
+    const slugExist = await table.TemplateModel.findBySlug(req.body.slug);
+    const record = await table.TemplateModel.findById(req.params.id);
 
     if (!record) {
       return res.code(NOT_FOUND).send({ message: "template not found!" });
@@ -72,7 +72,7 @@ const updateById = async (req, res) => {
 
     req.body.slug = slugify(req.body.name, { lower: true });
 
-    const template = await table.TempalateModel.updateById(req, req.params.id);
+    const template = await table.TemplateModel.updateById(req, req.params.id);
 
     if (template && req.body.fields) {
       req.body.fields.forEach(async (field) => {
@@ -130,7 +130,16 @@ const updateById = async (req, res) => {
 
 const get = async (req, res) => {
   try {
-    res.send(await table.TempalateModel.get(req));
+    res.send(await table.TemplateModel.get(req));
+  } catch (error) {
+    console.error(error);
+    res.code(INTERNAL_SERVER_ERROR).send(error);
+  }
+};
+
+const getFetauredTemplates = async (req, res) => {
+  try {
+    res.send(await table.TemplateModel.getFeatured(req));
   } catch (error) {
     console.error(error);
     res.code(INTERNAL_SERVER_ERROR).send(error);
@@ -139,7 +148,7 @@ const get = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const record = await table.TempalateModel.getById(req.params.id);
+    const record = await table.TemplateModel.getById(req.params.id);
 
     if (!record) {
       return res.code(NOT_FOUND).send({ message: "template not found!" });
@@ -152,9 +161,36 @@ const getById = async (req, res) => {
   }
 };
 
+const getBySlug = async (req, res) => {
+  try {
+    const record = await table.TemplateModel.getBySlug(req.params.slug);
+
+    if (!record) {
+      return res.code(NOT_FOUND).send({ message: "template not found!" });
+    }
+
+    res.send(record);
+  } catch (error) {
+    console.error(error);
+    res.code(INTERNAL_SERVER_ERROR).send(error);
+  }
+};
+
+const getByCategory = async (req, res) => {
+  try {
+    const record = await table.TemplateModel.getByCategory(req.params.slug);
+    // console.log({ record });
+
+    res.send(record);
+  } catch (error) {
+    console.error(error);
+    res.code(INTERNAL_SERVER_ERROR).send(error);
+  }
+};
+
 const deleteById = async (req, res) => {
   try {
-    const record = await table.TempalateModel.deleteById(req.params.id);
+    const record = await table.TemplateModel.deleteById(req.params.id);
 
     if (!record) {
       return res.code(NOT_FOUND).send({ message: "template not found!" });
@@ -199,12 +235,26 @@ const deleteImageById = async (req, res) => {
   }
 };
 
+const searchTemplates = async (req, res) => {
+  try {
+    const data = await table.TemplateModel.searchTemplates(req);
+    res.send(data);
+  } catch (error) {
+    console.error(error);
+    res.code(INTERNAL_SERVER_ERROR).send(error);
+  }
+};
+
 export default {
   create: create,
   updateById: updateById,
   get: get,
   getById: getById,
+  getBySlug: getBySlug,
+  getByCategory: getByCategory,
   deleteById: deleteById,
   deleteFieldById: deleteFieldById,
   deleteImageById: deleteImageById,
+  getFetauredTemplates: getFetauredTemplates,
+  searchTemplates: searchTemplates,
 };

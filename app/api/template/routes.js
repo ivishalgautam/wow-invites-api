@@ -14,12 +14,11 @@ const schema = {
   },
 };
 
-export default async function (fastify, options) {
+export default async function routes(fastify, options) {
   fastify.post("/", schema, controller.create);
   fastify.put("/:id", {}, controller.updateById);
   fastify.get("/:id", {}, controller.getById);
   fastify.delete("/:id", {}, controller.deleteById);
   fastify.delete("/field/:id", {}, controller.deleteFieldById);
   fastify.delete("/image/:id", {}, controller.deleteImageById);
-  fastify.get("/", {}, controller.get);
 }
