@@ -11,7 +11,6 @@ import authRoutes from "./app/api/auth/routes.js";
 import pg_database from "./app/db/postgres.js";
 import routes from "./app/routes/v1/index.js";
 import uploadFileRoutes from "./app/api/upload_files/routes.js";
-import paymentRoutes from "./app/api/payment/routes.js";
 
 import templateController from "./app/api/template/controller.js";
 import categoriesController from "./app/api/category/controller.js";
@@ -33,7 +32,6 @@ export default (app) => {
   // Increase the payload size limit
   app.register(routes, { prefix: "v1" });
   app.register(authRoutes, { prefix: "v1/auth" });
-  app.register(paymentRoutes, { prefix: "v1/payment" });
 
   // tmplates
   app.get("/v1/templates", {}, templateController.get);

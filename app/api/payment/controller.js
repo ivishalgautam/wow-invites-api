@@ -1,13 +1,20 @@
 "use strict";
 import constants from "../../lib/constants/index.js";
-import SHA256 from "crypto-js/sha256.js";
 import crypto from "crypto";
 import axios from "axios";
 import { v4 as UUIDV4 } from "uuid";
 const { INTERNAL_SERVER_ERROR, NOT_FOUND, BAD_REQUEST } = constants.http.status;
+import table from "../../db/models.js";
 
 const create = async (req, res) => {
   try {
+    const { details, delivery_date, slug } = req.body;
+    const template = await table.TemplateModel.findBySlug(slug);
+
+    if (!template) {
+      return res.code(NOT_FOUND).send({ message: "template not found!" });
+    }
+
     const transId = `T${UUIDV4().toString(36).slice(-6)}`;
     const merchUserId = `MUID${UUIDV4().toString(36).slice(-6)}`;
 
@@ -57,6 +64,13 @@ const create = async (req, res) => {
       });
 
     res.send(response.data.data.instrumentResponse.redirectInfo.url);
+
+    await table.QueryModel.create({
+      details,
+      delivery_date,
+      user_id: req.user_data.id,
+      template_id: template?.id,
+    });
   } catch (error) {
     console.error(error);
     res.code(INTERNAL_SERVER_ERROR).send(error);
@@ -64,6 +78,7 @@ const create = async (req, res) => {
 };
 
 const checkStatus = async (req, res) => {
+  console.log(req.body);
   try {
     const string =
       `/pg/v1/status/${req.body.merchantId}/${req.body.transactionId}` +

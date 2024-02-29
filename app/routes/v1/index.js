@@ -5,6 +5,7 @@ import templateRoutes from "../../api/template/routes.js";
 import queryRoutes from "../../api/query/routes.js";
 import categoryRoutes from "../../api/category/routes.js";
 import bannerRoutes from "../../api/banner/routes.js";
+import paymentRoutes from "../../api/payment/routes.js";
 
 export default async function routes(fastify, options) {
   fastify.addHook("onRequest", jwtVerify.verifyToken);
@@ -13,4 +14,5 @@ export default async function routes(fastify, options) {
   fastify.register(queryRoutes, { prefix: "queries" });
   fastify.register(categoryRoutes, { prefix: "categories" });
   fastify.register(bannerRoutes, { prefix: "banners" });
+  fastify.register(paymentRoutes, { prefix: "payment" });
 }

@@ -5,8 +5,8 @@ import table from "../../db/models.js";
 
 const create = async (req, res) => {
   try {
-    const { details, delivery_date, template_id } = req.body;
-    const template = await table.TempalateModel.getById(template_id);
+    const { details, delivery_date, slug } = req.body;
+    const template = await table.TemplateModel.findBySlug(slug);
 
     if (!template) {
       return res.code(NOT_FOUND).send({ message: "template not found!" });
@@ -16,7 +16,7 @@ const create = async (req, res) => {
       details,
       delivery_date,
       user_id: req.user_data.id,
-      template_id,
+      template_id: template?.id,
     });
 
     res.send({ message: "Query sent." });
@@ -30,7 +30,7 @@ const updateById = async (req, res) => {
   try {
     const { details, delivery_date, template_id } = req.body;
 
-    const template = await table.TempalateModel.getById(template_id);
+    const template = await table.TemplateModel.getById(template_id);
 
     if (!template) {
       return res.code(NOT_FOUND).send({ message: "template not found!" });
@@ -54,7 +54,9 @@ const updateById = async (req, res) => {
 
 const get = async (req, res) => {
   try {
-    res.send(await table.QueryModel.get(req));
+    const { queries, total_page, page } = await table.QueryModel.get(req);
+
+    res.send({ queries, total_page, page });
   } catch (error) {
     console.error(error);
     res.code(INTERNAL_SERVER_ERROR).send(error);

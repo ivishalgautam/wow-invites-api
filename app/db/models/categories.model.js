@@ -63,34 +63,34 @@ const get = async (req) => {
     : req?.query?.limit
     ? req?.query?.limit
     : 10;
-  console.log({ page, limit });
+
   if (page && limit) {
     const offset = (page - 1) * limit;
     threshold = `LIMIT '${limit}' OFFSET '${offset}';`;
   }
 
   let query = `
-        SELECT 
-            cat.id,
-            cat.name,
-            cat.created_at,
-            cat.updated_at,
-            cat.slug,
-            cat.image,
-            cat.is_featured,
-            COUNT(tmp.id) as total_templates
-          FROM categories cat
-          LEFT JOIN templates tmp ON tmp.category_id = cat.id
-          GROUP BY 
-            cat.id,
-            cat.name,
-            cat.created_at,
-            cat.updated_at,
-            cat.slug,
-            cat.image,
-            cat.is_featured
-          ORDER BY cat.created_at DESC
-          ${threshold}
+    SELECT 
+        cat.id,
+        cat.name,
+        cat.created_at,
+        cat.updated_at,
+        cat.slug,
+        cat.image,
+        cat.is_featured,
+        COUNT(tmp.id) as total_templates
+      FROM categories cat
+      LEFT JOIN templates tmp ON tmp.category_id = cat.id
+      GROUP BY 
+        cat.id,
+        cat.name,
+        cat.created_at,
+        cat.updated_at,
+        cat.slug,
+        cat.image,
+        cat.is_featured
+      ORDER BY cat.created_at DESC
+      ${threshold}
   `;
 
   // console.log(query);

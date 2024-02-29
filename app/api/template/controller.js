@@ -179,7 +179,6 @@ const getBySlug = async (req, res) => {
 const getByCategory = async (req, res) => {
   try {
     const record = await table.TemplateModel.getByCategory(req.params.slug);
-    // console.log({ record });
 
     res.send(record);
   } catch (error) {

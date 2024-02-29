@@ -87,10 +87,10 @@ const get = async (req) => {
     : req?.query?.limit;
 
   const offset = (page_number - 1) * limit;
-  let threshold = `LIMIT '${limit}' OFFSET '${offset}';`;
+  let threshold = `LIMIT '${limit}' OFFSET '${offset}'`;
 
   if (featured == "true") {
-    whereQuery = `WHERE cat.is_featured = true;`;
+    whereQuery = `WHERE cat.is_featured = true`;
     threshold = "";
   }
 
@@ -108,10 +108,26 @@ const get = async (req) => {
       tmp.created_at,
       tmp.updated_at,
       cat.name as category_name,
-      cat.id as category_id
+      cat.id as category_id,
+      COUNT(ti.id) as total_images
     FROM templates tmp
     LEFT JOIN categories cat ON cat.id = tmp.category_id
+    JOIN template_images ti ON ti.template_id = tmp.id
     ${whereQuery}
+    GROUP BY
+      tmp.id,
+      tmp.name,
+      tmp.slug,
+      tmp.url,
+      tmp.thumbnail,
+      tmp.price,
+      tmp.sale_price,
+      tmp.tags,
+      tmp.category_id,
+      tmp.created_at,
+      tmp.updated_at,
+      cat.name,
+      cat.id
     ${threshold}
 `;
 
@@ -148,6 +164,7 @@ const getById = async (template_id) => {
               tmp.url,
               tmp.category_id
   `;
+
   return await TemplateModel.sequelize.query(query, {
     type: QueryTypes.SELECT,
     plain: true,
